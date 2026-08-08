@@ -179,6 +179,19 @@ test("provider registry exposes configured API and OAuth model families", () => 
     assert.equal(k3.defaultEffort, "max", slug);
     assert.equal(k3.requestProfile, "kimi-k3", slug);
   }
+  for (const slug of [
+    "opencode-go/deepseek-v4-flash",
+    "opencode-go/deepseek-v4-pro",
+  ]) {
+    const deepseek = MODEL_BY_SLUG.get(slug);
+    assert.deepEqual(
+      deepseek.reasoningLevels.map((level) => level.effort),
+      ["minimal", "low", "medium", "high", "xhigh", "max"],
+      slug,
+    );
+    assert.equal(deepseek.defaultEffort, "high", slug);
+    assert.equal(deepseek.requestProfile, "deepseek-thinking", slug);
+  }
   // Hosted search is an xAI-backend behavior, so only the Grok OAuth slug may
   // declare it; every other search-capable path waits on the router-side
   // emulated executor.

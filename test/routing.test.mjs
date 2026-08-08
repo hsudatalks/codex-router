@@ -1517,6 +1517,55 @@ test("API forwarder supports all DeepSeek V4 models and normalizes thinking", as
   }
 });
 
+test("API forwarder normalizes inherited Codex effort for opencode Go DeepSeek", async () => {
+  const upstreamRequests = [];
+  const upstream = await mockServer(async (request, response) => {
+    upstreamRequests.push({ headers: request.headers, body: await bodyJson(request) });
+    json(response, 200, { choices: [] });
+  });
+  const forwarderPort = await openPort();
+  const forwarder = run("api-forwarder.mjs", {
+    CODEX_ROUTER_API_PORT: String(forwarderPort),
+    OPENCODE_GO_BASE_URL: `http://127.0.0.1:${upstream.port}`,
+    OPENCODE_GO_API_KEY: "TEST_OPENCODE_GO_KEY",
+    CODEX_ROUTER_QUIET: "1",
+  });
+
+  try {
+    await waitFor(`http://127.0.0.1:${forwarderPort}/health`, forwarder, {
+      Authorization: `Bearer ${INTERNAL_KEY}`,
+    });
+    const response = await fetch(
+      `http://127.0.0.1:${forwarderPort}/v1/chat/completions`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${INTERNAL_KEY}`,
+          "ChatGPT-Account-Id": "must-not-forward",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "opencode-go-deepseek-v4-flash",
+          reasoning_effort: "medium",
+          temperature: 0.7,
+          messages: [{ role: "user", content: "test" }],
+        }),
+      },
+    );
+    assert.equal(response.status, 200);
+    const request = upstreamRequests.at(-1);
+    assert.equal(request.headers.authorization, "Bearer TEST_OPENCODE_GO_KEY");
+    assert.equal(request.headers["chatgpt-account-id"], undefined);
+    assert.equal(request.body.model, "deepseek-v4-flash");
+    assert.deepEqual(request.body.thinking, { type: "enabled" });
+    assert.equal(request.body.reasoning_effort, "high");
+    assert.equal(request.body.temperature, undefined);
+  } finally {
+    await stopChild(forwarder);
+    await closeServer(upstream.server);
+  }
+});
+
 test("API forwarder coalesces consecutive assistant messages so tool results follow tool calls", async () => {
   const upstreamRequests = [];
   const upstream = await mockServer(async (request, response) => {

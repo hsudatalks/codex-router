@@ -13,8 +13,24 @@
       "defaultEffort": "high",
       "reasoningLevels": [
         {
+          "effort": "minimal",
+          "description": "Minimal reasoning, mapped to the low tier"
+        },
+        {
+          "effort": "low",
+          "description": "Faster reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balanced reasoning, mapped to the high tier"
+        },
+        {
           "effort": "high",
           "description": "Deep reasoning"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra reasoning, mapped to the maximum tier"
         },
         {
           "effort": "max",
@@ -26,7 +42,8 @@
       "inputModalities": [
         "text"
       ],
-      "compHash": "opencode-go-deepseek-v4-pro-v1"
+      "requestProfile": "deepseek-thinking",
+      "compHash": "opencode-go-deepseek-v4-pro-v2"
     }
   ]
 }
